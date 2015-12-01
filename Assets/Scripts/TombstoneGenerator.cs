@@ -1,40 +1,26 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class TombstonePlacer : MonoBehaviour {
+public class TombstoneGenerator : MonoBehaviour {
 
-	public int xNumGraves;
-	public int yNumGraves;
-	public float xSpacing;
-	public float ySpacing;
-	public float leeway;
+	public int xNumGraves = 20;
+	public int yNumGraves = 20;
+	public float xSpacing = 20;
+	public float ySpacing = 20;
+	public float leeway = 8;
 
 	public GameObject grave1;
 	public GameObject grave2;
 	public GameObject grave3;
 	public GameObject tree;
+	public GameObject lamp;
 
 	// Use this for initialization
 	void Start () {
-		if (grave1 == null || grave2 == null || grave3 == null || tree == null) {
+		if (grave1 == null || grave2 == null || grave3 == null ||
+		    tree == null || lamp == null) {
 			return; // nothing to do here
 		}
-		// validation
-//		if (xNumGraves == null) {
-//			xNumGraves = 1;
-//		}
-//		if (yNumGraves == null) {
-//			yNumGraves = 1;
-//		}
-//		if (xSpacing == null) {
-//			xSpacing = 0.0f;
-//		}
-//		if (ySpacing == null) {
-//			ySpacing = 0.0f;
-//		}
-//		if (leeway == null) {
-//			leeway = 0.0f;
-//		}
 
 		GenerateTombstones ();
 	}
@@ -46,7 +32,7 @@ public class TombstonePlacer : MonoBehaviour {
 				                          0,
 				                          ySpacing * y - ySpacing * yNumGraves/2 - leeway/2 + Random.value*leeway);
 				GameObject grave = null;
-				switch (Random.Range (0, 10)) {
+				switch (Random.Range (0, 11)) {
 				case 0:
 				case 1:
 				case 2: {
@@ -69,8 +55,13 @@ public class TombstonePlacer : MonoBehaviour {
 					break;
 				}
 				case 9: {
-					grave = (GameObject)(Instantiate (tree, transform.position + loc + new Vector3(0, 3, 0), Quaternion.identity));
+					grave = (GameObject)(Instantiate (tree, transform.position + loc + new Vector3(0.0f, 3.0f, 0.0f), Quaternion.identity));
 					RotateTree (grave, Random.Range (0, 12));
+					break;
+				}
+				case 10: {
+					grave = (GameObject)(Instantiate (lamp, transform.position + loc + new Vector3(0.0f, 2.7f, 0.0f), Quaternion.identity));
+					grave.transform.eulerAngles = new Vector3(270.0f, 0.0f, 0.0f);
 					break;
 				}
 				}

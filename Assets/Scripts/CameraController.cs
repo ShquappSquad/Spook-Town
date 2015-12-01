@@ -5,10 +5,13 @@ public class CameraController : MonoBehaviour {
 
 	public Transform playerPosition;
 	private Vector3 offset;
-
-	public float scrollSpeed;
-	private float minimumOffset;
-	private float maximumOffset;
+	public float scrollSpeed = 0.08f;
+	
+	private float offsetPercent = 1.0f;
+	private float minimumOffset = 0.4f;
+	private float maximumOffset = 1.1f;
+	private Vector3 originalOffset;
+	private Vector3 offFromPlayer;
 
 	private float scroll;
 
@@ -18,22 +21,26 @@ public class CameraController : MonoBehaviour {
 			offset = new Vector3 (0.0f, 0.0f, 0.0f);
 		} else {
 			offset = transform.position - playerPosition.position;
-			minimumOffset = offset.magnitude * 0.5f;
-			maximumOffset = offset.magnitude * 1.2f;
+			offFromPlayer = new Vector3(0.0f, 0.0f, offset.z * 0.3f);
+			originalOffset = offset - offFromPlayer;
+			offset = originalOffset;
 		}
 	}
 	
 	// Update is called once per frame
 	void Update () {
 		scroll = Input.GetAxis ("Mouse ScrollWheel");
-		if (scroll > 0.0f && offset.magnitude > minimumOffset) {
-			offset += transform.forward * scrollSpeed;
-		} else if (scroll < 0.0f && offset.magnitude < maximumOffset) {
-			offset -= transform.forward * scrollSpeed;
+		if (scroll > 0.0f && offsetPercent > minimumOffset) {
+			offset -= originalOffset * scrollSpeed;
+			offsetPercent -= scrollSpeed;
+		} else if (scroll < 0.0f && offsetPercent < maximumOffset) {
+			offset += originalOffset * scrollSpeed;
+			offsetPercent += scrollSpeed;
 		}
 
 		if (playerPosition != null) {
-			transform.position = playerPosition.position + offset;
+			transform.position = playerPosition.position + offset + offFromPlayer;
+			transform.LookAt (playerPosition.position + new Vector3(0.0f, 3.0f, 0.0f));
 		}
 
 	}
