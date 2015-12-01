@@ -6,6 +6,8 @@ public class LampProximityLighter : MonoBehaviour {
 	public Transform player;
 	public float activationProximity = 5.0f;
 	public Light flame;
+
+	[Range(0.0f, 8.0f)]
 	public float maxIntensity = 4.0f;
 
 	private ParticleSystem particle;

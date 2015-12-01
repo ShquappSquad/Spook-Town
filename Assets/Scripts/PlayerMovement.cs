@@ -3,7 +3,7 @@ using System.Collections;
 
 public class PlayerMovement : MonoBehaviour {
 	
-	public float speed;
+	public float speed = 0.4f;
 	public float east_west;
 	public float north_south;
 
@@ -17,10 +17,19 @@ public class PlayerMovement : MonoBehaviour {
 	void Update () {
 		east_west = Input.GetAxis ("Horizontal");
 		north_south = Input.GetAxis ("Vertical");
+		if (east_west < 0.3f && east_west > -0.3f) {
+			east_west = 0.0f;
+		}
+		if (north_south < 0.3f && north_south > -0.3f) {
+			north_south = 0.0f;
+		}
 
-		UpdateDirection ();
-		RotatePlayer ();
-		transform.position += new Vector3 (east_west * speed, 0, north_south * speed);
+		if (east_west != 0.0f || north_south != 0.0f) {
+			UpdateDirection ();
+			RotatePlayer ();
+			Vector3 movement = new Vector3 (east_west, 0.0f, north_south);
+			transform.position += movement * speed;
+		}
 	}
 
 	void UpdateDirection() {

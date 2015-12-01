@@ -4,12 +4,15 @@ using System.Collections;
 public class CameraController : MonoBehaviour {
 
 	public Transform playerPosition;
+	public AudioSource music;
+
 	private Vector3 offset;
+	[Range(0.0f, 0.5f)]
 	public float scrollSpeed = 0.08f;
 	
 	private float offsetPercent = 1.0f;
-	private float minimumOffset = 0.4f;
-	private float maximumOffset = 1.1f;
+	public float minimumOffset = 0.4f;
+	public float maximumOffset = 1.1f;
 	private Vector3 originalOffset;
 	private Vector3 offFromPlayer;
 
@@ -43,5 +46,12 @@ public class CameraController : MonoBehaviour {
 			transform.LookAt (playerPosition.position + new Vector3(0.0f, 3.0f, 0.0f));
 		}
 
+		if (Input.GetKeyDown (KeyCode.M) && music != null) {
+			if (music.isPlaying) {
+				music.Pause ();
+			} else {
+				music.UnPause ();
+			}
+		}
 	}
 }
