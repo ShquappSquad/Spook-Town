@@ -12,7 +12,9 @@ Game Development starter project using Unity and Blender
 ## Environment
 The game environment is a dark graveyard with semi-randomized walls, graves, scenery, and pathways. There are multiple grave models, and one grave is specified as the cursed grave, with a special model and particles around it.
 
-Periodically along the pathways are unlit torches/braziers that can be lit by the player and will emit a small amount of light.
+Periodically along the pathways are unlit torches that can be lit by the player and will emit a small amount of light.
+
+Score for the background music can be found on [Noteflight](https://www.noteflight.com/scores/view/e0573185c1fb8fa6ccde44f62383f8c5700a559f).
 
 ## Objective
 The goal of the game is to find and purify the cursed grave. Obstacles to achieving this goal include the darkness of the graveyard and ghosts that spawn and attempt to kill the player.
