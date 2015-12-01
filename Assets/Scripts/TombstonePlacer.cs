@@ -20,21 +20,21 @@ public class TombstonePlacer : MonoBehaviour {
 			return; // nothing to do here
 		}
 		// validation
-		if (xNumGraves == null) {
-			xNumGraves = 1;
-		}
-		if (yNumGraves == null) {
-			yNumGraves = 1;
-		}
-		if (xSpacing == null) {
-			xSpacing = 0.0f;
-		}
-		if (ySpacing == null) {
-			ySpacing = 0.0f;
-		}
-		if (leeway == null) {
-			leeway = 0.0f;
-		}
+//		if (xNumGraves == null) {
+//			xNumGraves = 1;
+//		}
+//		if (yNumGraves == null) {
+//			yNumGraves = 1;
+//		}
+//		if (xSpacing == null) {
+//			xSpacing = 0.0f;
+//		}
+//		if (ySpacing == null) {
+//			ySpacing = 0.0f;
+//		}
+//		if (leeway == null) {
+//			leeway = 0.0f;
+//		}
 
 		GenerateTombstones ();
 	}
