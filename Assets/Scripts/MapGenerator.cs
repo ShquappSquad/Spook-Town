@@ -4,50 +4,91 @@ using System.Collections.Generic;
 
 public class MapGenerator : MonoBehaviour {
 
+	// basic properties
 	public int xNumGraves = 20;
 	public int yNumGraves = 20;
 	public float xSpacing = 20.0f;
 	public float ySpacing = 20.0f;
 
-	[Range(0.0f, 1.0f)]
+	// range of randomized placement
+	[Range(0.0f, 0.5f)]
 	public float leeway = 0.4f;
 
+	// GameObjects to be instantiated
 	public GameObject grave1;
 	public GameObject grave2;
 	public GameObject grave3;
 	public GameObject tree;
 	public GameObject lamp;
 	public GameObject fence;
+	public GameObject CursedGrave;
 
+	// grid random fill percent
 	[Range(0.0f, 1.0f)]
 	public float fillPercent;
 
+	// EliminatePockets information
 	public int pocketMinSize = 20;
 	public int wallMinSize = 10;
 
+	// grids and vars for generation
 	private int[,] grid;
+	private Square[,] SquareGrid;
+	private Square GateSquare;
 
-	// Use this for initialization
+	// used for marching squares
+	struct Square {
+		public Coord topLeft;
+		public Coord topRight;
+		public Coord botLeft;
+		public Coord botRight;
+		public int configuration;
+		public bool processed;
+		// initializer
+		public Square(Coord tLin, Coord tRin,
+		              Coord bLin, Coord bRin) {
+			topLeft = tLin; topRight = tRin;
+			botLeft = bLin; botRight = bRin;
+			configuration = 0;
+			processed = false;
+		}
+	}
+
+	/// <summary>
+	/// Called at beginning of program, creates map.
+	/// </summary>
 	void Start () {
 		if (grave1 == null || grave2 == null || grave3 == null ||
 		    tree == null || lamp == null) {
 			return; // nothing to do here
 		}
 		grid = new int[xNumGraves, yNumGraves];
+		SquareGrid = new Square[xNumGraves - 1,yNumGraves - 1];
 
-		GenerateBorders ();
-		GeneratePaths ();
+		bool gatePlaced = false;
+		//while (!gatePlaced) {
+			// step 1: cellular automata and cleaning
+			GenerateBitmap ();
+			// step 2: calculate marching squares
+			CalculateMarchingSquares ();
+			// step 2.5: place gate
+			//gatePlaced = PlaceGate ();
+		//}
+		// step 3: create paths and lamps
+		//GeneratePaths ();
+		// step 4: place cursed grave
+		//PlaceCursedGrave ();
+		// step 5: place graves
 		GenerateTombstones ();
+		// final: create walls, place player
 	}
 
-	void Update() {
-		if (Input.GetMouseButtonDown(0)) {
-			GenerateBorders();
-		}
-	}
+	/// <summary>
+	/// Generates the bitmap and cleans up pockets/empty parts.
+	/// </summary>
 
 	// Border generation (cellular automata)
-	void GenerateBorders () {
+	void GenerateBitmap () {
 		// randomly fill map and initialize mapFlags
 		for (int x = 0; x < xNumGraves; x++) {
 			for (int y = 0; y < yNumGraves; y++) {
@@ -82,6 +123,10 @@ public class MapGenerator : MonoBehaviour {
 		}
 	}
 
+	/// <summary>
+	/// Eliminates pockets smaller than minPocketSize and
+	/// out-of-bounds areas less than minWallSize.
+	/// </summary>
 	void EliminatePockets() {
 		List<List<Coord>> wallRegions = GetRegions (1);
 		
@@ -103,7 +148,11 @@ public class MapGenerator : MonoBehaviour {
 			}
 		}
 	}
-	
+
+	/// <summary>
+	/// Gets a list of all regions of a given
+	/// tile type in the bitmap.
+	/// </summary>
 	List<List<Coord>> GetRegions(int tileType) {
 		List<List<Coord>> regions = new List<List<Coord>> ();
 		int[,] mapFlags = new int[xNumGraves,yNumGraves];
@@ -123,7 +172,13 @@ public class MapGenerator : MonoBehaviour {
 		
 		return regions;
 	}
-	
+
+	/// <summary>
+	/// Gets all region tiles of a region
+	/// containing the given location.
+	/// The list is ordered from closest to furthest
+	/// coord.
+	/// </summary>
 	List<Coord> GetRegionTiles(int startX, int startY) {
 		List<Coord> tiles = new List<Coord> ();
 		int[,] mapFlags = new int[xNumGraves,yNumGraves];
@@ -156,6 +211,10 @@ public class MapGenerator : MonoBehaviour {
 		return x >= 0 && x < xNumGraves && y >= 0 && y < yNumGraves;
 	}
 
+	/// <summary>
+	/// Smooths the bitmap through cellular
+	/// automaton-like behavior.
+	/// </summary>
 	void SmoothMap () {
 		for (int x = 0; x < xNumGraves; x++) {
 			for (int y = 0; y < yNumGraves; y++) {
@@ -170,6 +229,10 @@ public class MapGenerator : MonoBehaviour {
 		}
 	}
 
+	/// <summary>
+	/// Counts number of bitmap 1s next
+	/// to a given neighbor.
+	/// </summary>
 	int CountNeighbors (int xin, int yin) {
 		int wallCount = 0;
 		for (int neighbourX = xin - 1; neighbourX <= xin + 1; neighbourX ++) {
@@ -188,12 +251,110 @@ public class MapGenerator : MonoBehaviour {
 		return wallCount;
 	}
 
-	// Path generation (recursively generate inside borders)
+	/// <summary>
+	/// Calculates marching squares
+	/// based on bitmap.
+	/// </summary>
+	void CalculateMarchingSquares () {
+		for (int x = 0; x < xNumGraves - 1; x++) {
+			for (int y = 0; y < yNumGraves - 1; y++) {
+				SquareGrid[x,y] = new Square(new Coord(x, y),
+				                             new Coord(x, y + 1),
+				                             new Coord(x + 1, y),
+				                             new Coord(x + 1, y + 1));
+				CalculateConfiguration(SquareGrid[x,y]);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Calculates the configuration of
+	/// a square based on state of grid.
+	/// </summary>
+	void CalculateConfiguration (Square square) {
+		square.configuration += 8 * grid [square.topLeft.x, square.topLeft.y];
+
+		if (IsInMapRange (square.topRight.x, square.topRight.y)) {
+			square.configuration += 4 * grid [square.topRight.x, square.topRight.y];
+		} else {
+			square.configuration += 4;
+		}
+		if (IsInMapRange (square.botRight.x, square.botRight.y)) {
+			square.configuration += 2 * grid[square.botRight.x, square.botRight.y];
+		} else {
+			square.configuration += 2;
+		}
+		if (IsInMapRange (square.botLeft.x, square.botLeft.y)) {
+			square.configuration += grid[square.botLeft.x, square.botLeft.y];
+		} else {
+			square.configuration += 1;
+		}
+	}
+
+	/// <summary>
+	/// Places the gate in a marching square of type 3.
+	/// If none exists, restarts the generation process.
+	/// </summary>
+	bool PlaceGate() {
+		List<Square> gatePossibilities = GetGatePlaces ();
+		if (gatePossibilities.Count > 0) {
+			int choice = Random.Range (0, gatePossibilities.Count);
+			GateSquare = gatePossibilities[choice];
+			GateSquare.processed = true;
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	List<Square> GetGatePlaces () {
+		List<Square> gatePlaces = new List<Square> ();
+		for (int x = 0; x < xNumGraves - 1; x++) {
+			for (int y = 0; y < yNumGraves - 1; y++) {
+				if (SquareGrid[x, y].configuration == 3 && x > 0 && // is flat lower bound
+				    SquareGrid[x - 1, y].configuration == 0) { // one above is empty
+					gatePlaces.Add (SquareGrid[x,y]);
+				}
+			}
+		}
+		return gatePlaces;
+	}
+
+
+
+	/// <summary>
+	/// Generates the paths.
+	/// </summary>
 	void GeneratePaths () {
 
 	}
 
-	// Tombstone generation	(on remaining empty cells)
+	/// <summary>
+	/// Places the cursed grave
+	/// in an available place.
+	/// </summary>
+	void PlaceCursedGrave () {
+		List<Coord> possiblePlaces = GetRegionTiles (GateSquare.topLeft.x, GateSquare.topLeft.y);
+		int regionSize = possiblePlaces.Count;
+		float chance = 0.1f;
+		float increment = (1.0f - chance) / (regionSize * 0.4f);
+		int idx = regionSize - 1;
+
+		while (chance <= 1.0f) {
+			if (Random.value <= chance) {
+				Coord place = possiblePlaces[idx];
+				Vector3 pos = new Vector3(place.x * xSpacing, 0, place.y * ySpacing);
+				Instantiate(CursedGrave, pos, Quaternion.identity);
+				break;
+			}
+			idx--;
+			chance += increment;
+		}
+	}
+
+	/// <summary>
+	/// Generates tombstones in any open bitmap spot.
+	/// </summary>
 	void GenerateTombstones() {
 		for (int x = 0; x < xNumGraves; x++) {
 			for (int y = 0; y < yNumGraves; y++) {
@@ -241,6 +402,9 @@ public class MapGenerator : MonoBehaviour {
 		}
 	}
 
+	/// <summary>
+	/// Rotates a tombstone/normal object.
+	/// </summary>	
 	void RotateTombstone(GameObject tombstone, int direction) {
 		switch (direction) {
 		case 0: {
@@ -294,6 +458,9 @@ public class MapGenerator : MonoBehaviour {
 		}
 	}
 
+	/// <summary>
+	/// Rotates a tree object.
+	/// </summary>
 	void RotateTree(GameObject tombstone, int direction) {
 		switch (direction) {
 		case 0: {
@@ -347,6 +514,9 @@ public class MapGenerator : MonoBehaviour {
 		}
 	}
 
+	/// <summary>
+	/// To make sure stuff works.
+	/// </summary>
 	void OnDrawGizmos() {
 		if (grid != null) {
 			for (int x = 0; x < xNumGraves; x ++) {

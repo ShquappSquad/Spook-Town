@@ -20,15 +20,16 @@ public class PlayerMovement : MonoBehaviour {
 		if (east_west < 0.3f && east_west > -0.3f) {
 			east_west = 0.0f;
 		}
-		if (north_south < 0.3f && north_south > -0.3f) {
-			north_south = 0.0f;
-		}
 
 		if (east_west != 0.0f || north_south != 0.0f) {
 			UpdateDirection ();
 			RotatePlayer ();
 			Vector3 movement = new Vector3 (east_west, 0.0f, north_south);
-			transform.position += movement * speed;
+			if (direction % 2 == 1) {
+				transform.position += movement * speed * 0.707f;
+			} else {
+				transform.position += movement * speed;
+			}
 		}
 	}
 
