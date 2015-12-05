@@ -523,14 +523,16 @@ public class MapGenerator : MonoBehaviour {
 						goto case 11;
 					}
 					case 5: { // 2 diag topright & botleft
-//						pos += new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
-//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
-//						newfence.transform.eulerAngles = new Vector3(0.0f, 00.0f, 0.0f);
-//						pos -= new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
-//						
-//						pos += new Vector3 (-0.3f * xSpacing, 0.0f, 0.55f * ySpacing);
-//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
-//						newfence.transform.eulerAngles = new Vector3(0.0f, 90.0f, 0.0f);
+						pos += new Vector3 (0.40f * xSpacing, 0.0f, 0.65f * ySpacing);
+						newfence = (GameObject)(Instantiate (shortFence, pos, Quaternion.identity));
+						newfence.transform.eulerAngles = new Vector3(0.0f, -45.0f, 0.0f);
+						newfence.transform.localScale = new Vector3(1.0f, 1.0f, 0.707f);
+						pos -= new Vector3 (0.40f * xSpacing, 0.0f, 0.65f * ySpacing);
+
+						pos += new Vector3 (-0.1f * xSpacing, 0.0f, 0.15f * ySpacing);
+						newfence = (GameObject)(Instantiate (shortFence, pos, Quaternion.identity));
+						newfence.transform.eulerAngles = new Vector3(0.0f, -45.0f, 0.0f);
+						newfence.transform.localScale = new Vector3(1.0f, 1.0f, 0.707f);
 						break;
 					}
 					case 6: {
@@ -540,80 +542,56 @@ public class MapGenerator : MonoBehaviour {
 						goto case 8;
 					}
 					case 8: { // top left diag
-						pos += new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
-						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
-						newfence.transform.eulerAngles = new Vector3(0.0f, 00.0f, 0.0f);
-						pos -= new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
-						
-						pos += new Vector3 (-0.3f * xSpacing, 0.0f, 0.55f * ySpacing);
-						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
-						newfence.transform.eulerAngles = new Vector3(0.0f, 90.0f, 0.0f);
+						pos += new Vector3 (-0.40f * xSpacing, 0.0f, 0.65f * ySpacing);
+						newfence = (GameObject)(Instantiate (shortFence, pos, Quaternion.identity));
+						newfence.transform.eulerAngles = new Vector3(0.0f, 45.0f, 0.0f);
+						newfence.transform.localScale = new Vector3(1.0f, 1.0f, 0.707f);
 						break;
 					}
 					case 9: { // vertical
 						pos += new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
 						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
 						newfence.transform.eulerAngles = new Vector3(0.0f, 00.0f, 0.0f);
-						pos -= new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
-
-//						pos += new Vector3 (-0.3f * xSpacing, 0.0f, 0.55f * ySpacing);
-//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
-//						newfence.transform.eulerAngles = new Vector3(0.0f, 90.0f, 0.0f);
 						break;
 					}
 					case 10: { // 2 diag topleft & botright
-//						pos += new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
-//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
-//						newfence.transform.eulerAngles = new Vector3(0.0f, 00.0f, 0.0f);
-//						pos -= new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
-//						
-//						pos += new Vector3 (-0.3f * xSpacing, 0.0f, 0.55f * ySpacing);
-//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
-//						newfence.transform.eulerAngles = new Vector3(0.0f, 90.0f, 0.0f);
+						pos += new Vector3 (-0.40f * xSpacing, 0.0f, 0.65f * ySpacing);
+						newfence = (GameObject)(Instantiate (shortFence, pos, Quaternion.identity));
+						newfence.transform.eulerAngles = new Vector3(0.0f, 45.0f, 0.0f);
+						newfence.transform.localScale = new Vector3(1.0f, 1.0f, 0.707f);
+						pos -= new Vector3 (-0.40f * xSpacing, 0.0f, 0.65f * ySpacing);
+
+						pos += new Vector3 (0.1f * xSpacing, 0.0f, 0.15f * ySpacing);
+						newfence = (GameObject)(Instantiate (shortFence, pos, Quaternion.identity));
+						newfence.transform.eulerAngles = new Vector3(0.0f, 45.0f, 0.0f);
+						newfence.transform.localScale = new Vector3(1.0f, 1.0f, 0.707f);
 						break;
 					}
 					case 11: { // top right diag
-//						pos += new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
-//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
-//						newfence.transform.eulerAngles = new Vector3(0.0f, 00.0f, 0.0f);
-//						pos -= new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
-//						
-//						pos += new Vector3 (-0.3f * xSpacing, 0.0f, 0.55f * ySpacing);
-//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
-//						newfence.transform.eulerAngles = new Vector3(0.0f, 90.0f, 0.0f);
+						pos += new Vector3 (0.40f * xSpacing, 0.0f, 0.65f * ySpacing);
+						newfence = (GameObject)(Instantiate (shortFence, pos, Quaternion.identity));
+						newfence.transform.eulerAngles = new Vector3(0.0f, -45.0f, 0.0f);
+						newfence.transform.localScale = new Vector3(1.0f, 1.0f, 0.707f);
 						break;
 					}
 					case 12: { // horizontal
-//						pos += new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
-//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
-//						newfence.transform.eulerAngles = new Vector3(0.0f, 00.0f, 0.0f);
-//						pos -= new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
-						
 						pos += new Vector3 (-0.3f * xSpacing, 0.0f, 0.55f * ySpacing);
 						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
 						newfence.transform.eulerAngles = new Vector3(0.0f, 90.0f, 0.0f);
 						break;
 					}
 					case 13: { // bot right diag
-//						pos += new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
-//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
-//						newfence.transform.eulerAngles = new Vector3(0.0f, 00.0f, 0.0f);
-//						pos -= new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
-//						
-//						pos += new Vector3 (-0.3f * xSpacing, 0.0f, 0.55f * ySpacing);
-//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
-//						newfence.transform.eulerAngles = new Vector3(0.0f, 90.0f, 0.0f);
+						pos += new Vector3 (0.1f * xSpacing, 0.0f, 0.15f * ySpacing);
+						newfence = (GameObject)(Instantiate (shortFence, pos, Quaternion.identity));
+						newfence.transform.eulerAngles = new Vector3(0.0f, 45.0f, 0.0f);
+						newfence.transform.localScale = new Vector3(1.0f, 1.0f, 0.707f);
 						break;
 					}
 					case 14: { // bot left diag
-//						pos += new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
-//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
-//						newfence.transform.eulerAngles = new Vector3(0.0f, 00.0f, 0.0f);
-//						pos -= new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
-//						
-//						pos += new Vector3 (-0.3f * xSpacing, 0.0f, 0.55f * ySpacing);
-//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
-//						newfence.transform.eulerAngles = new Vector3(0.0f, 90.0f, 0.0f);
+						pos += new Vector3 (-0.1f * xSpacing, 0.0f, 0.15f * ySpacing);
+						newfence = (GameObject)(Instantiate (shortFence, pos, Quaternion.identity));
+						newfence.transform.eulerAngles = new Vector3(0.0f, -45.0f, 0.0f);
+						newfence.transform.localScale = new Vector3(1.0f, 1.0f, 0.707f);
 						break;
 					}
 					}
