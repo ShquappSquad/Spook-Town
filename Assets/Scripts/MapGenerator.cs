@@ -21,6 +21,7 @@ public class MapGenerator : MonoBehaviour {
 	public GameObject tree;
 	public GameObject lamp;
 	public GameObject fence;
+	public GameObject shortFence;
 	public GameObject CursedGrave;
 
 	// grid random fill percent
@@ -33,54 +34,26 @@ public class MapGenerator : MonoBehaviour {
 
 	// grids and vars for generation
 	private int[,] grid;
-	private Square[,] SquareGrid;
-	private Square GateSquare;
+	public SquareGrid squareGrid;
 
-	// used for marching squares
-	struct Square {
-		public Coord topLeft;
-		public Coord topRight;
-		public Coord botLeft;
-		public Coord botRight;
-		public int configuration;
-		public bool processed;
-		// initializer
-		public Square(Coord tLin, Coord tRin,
-		              Coord bLin, Coord bRin) {
-			topLeft = tLin; topRight = tRin;
-			botLeft = bLin; botRight = bRin;
-			configuration = 0;
-			processed = false;
-		}
-	}
 
 	/// <summary>
 	/// Called at beginning of program, creates map.
 	/// </summary>
 	void Start () {
 		if (grave1 == null || grave2 == null || grave3 == null ||
-		    tree == null || lamp == null) {
+		    tree == null || lamp == null || fence == null) {
 			return; // nothing to do here
 		}
+		if (shortFence == null) { // default shortFence to fence
+			shortFence = fence;
+		}
 		grid = new int[xNumGraves, yNumGraves];
-		SquareGrid = new Square[xNumGraves - 1,yNumGraves - 1];
 
-		bool gatePlaced = false;
-		//while (!gatePlaced) {
-			// step 1: cellular automata and cleaning
-			GenerateBitmap ();
-			// step 2: calculate marching squares
-			CalculateMarchingSquares ();
-			// step 2.5: place gate
-			//gatePlaced = PlaceGate ();
-		//}
-		// step 3: create paths and lamps
-		//GeneratePaths ();
-		// step 4: place cursed grave
-		//PlaceCursedGrave ();
-		// step 5: place graves
+		GenerateBitmap ();
+		GenerateMesh ();
 		GenerateTombstones ();
-		// final: create walls, place player
+		CreateWalls ();
 	}
 
 	/// <summary>
@@ -249,77 +222,107 @@ public class MapGenerator : MonoBehaviour {
 		}
 		
 		return wallCount;
+	}	
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////////////////////
+
+	
+	public void GenerateMesh() {
+		squareGrid = new SquareGrid(grid, xSpacing, ySpacing);
 	}
 
-	/// <summary>
-	/// Calculates marching squares
-	/// based on bitmap.
-	/// </summary>
-	void CalculateMarchingSquares () {
-		for (int x = 0; x < xNumGraves - 1; x++) {
-			for (int y = 0; y < yNumGraves - 1; y++) {
-				SquareGrid[x,y] = new Square(new Coord(x, y),
-				                             new Coord(x, y + 1),
-				                             new Coord(x + 1, y),
-				                             new Coord(x + 1, y + 1));
-				CalculateConfiguration(SquareGrid[x,y]);
-			}
-		}
-	}
-
-	/// <summary>
-	/// Calculates the configuration of
-	/// a square based on state of grid.
-	/// </summary>
-	void CalculateConfiguration (Square square) {
-		square.configuration += 8 * grid [square.topLeft.x, square.topLeft.y];
-
-		if (IsInMapRange (square.topRight.x, square.topRight.y)) {
-			square.configuration += 4 * grid [square.topRight.x, square.topRight.y];
-		} else {
-			square.configuration += 4;
-		}
-		if (IsInMapRange (square.botRight.x, square.botRight.y)) {
-			square.configuration += 2 * grid[square.botRight.x, square.botRight.y];
-		} else {
-			square.configuration += 2;
-		}
-		if (IsInMapRange (square.botLeft.x, square.botLeft.y)) {
-			square.configuration += grid[square.botLeft.x, square.botLeft.y];
-		} else {
-			square.configuration += 1;
-		}
-	}
-
-	/// <summary>
-	/// Places the gate in a marching square of type 3.
-	/// If none exists, restarts the generation process.
-	/// </summary>
-	bool PlaceGate() {
-		List<Square> gatePossibilities = GetGatePlaces ();
-		if (gatePossibilities.Count > 0) {
-			int choice = Random.Range (0, gatePossibilities.Count);
-			GateSquare = gatePossibilities[choice];
-			GateSquare.processed = true;
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	List<Square> GetGatePlaces () {
-		List<Square> gatePlaces = new List<Square> ();
-		for (int x = 0; x < xNumGraves - 1; x++) {
-			for (int y = 0; y < yNumGraves - 1; y++) {
-				if (SquareGrid[x, y].configuration == 3 && x > 0 && // is flat lower bound
-				    SquareGrid[x - 1, y].configuration == 0) { // one above is empty
-					gatePlaces.Add (SquareGrid[x,y]);
+	public class SquareGrid {
+		public Square[,] squares;
+		
+		public SquareGrid(int[,] map, float xspace, float yspace) {
+			int nodeCountX = map.GetLength(0);
+			int nodeCountY = map.GetLength (1);
+			float mapWidth = nodeCountX * xspace;
+			float mapHeight = nodeCountY * yspace;
+			
+			ControlNode[,] controlNodes = new ControlNode[nodeCountX,nodeCountY];
+			
+			for (int x = 0; x < nodeCountX; x ++) {
+				for (int y = 0; y < nodeCountY; y ++) {
+					Vector3 pos = new Vector3(-mapWidth/2.0f + x * xspace + xspace/2.0f,
+					                          0.0f,
+					                          -mapHeight/2.0f + y * yspace + yspace/2.0f);
+					controlNodes[x,y] = new ControlNode(pos, map[x,y] == 1, yspace, xspace);
 				}
 			}
+			
+			squares = new Square[nodeCountX -1,nodeCountY -1];
+			for (int x = 0; x < nodeCountX-1; x ++) {
+				for (int y = 0; y < nodeCountY-1; y ++) {
+					squares[x,y] = new Square(controlNodes[x,y+1],
+					                          controlNodes[x+1,y+1],
+					                          controlNodes[x+1,y],
+					                          controlNodes[x,y]);
+				}
+			}
+			
 		}
-		return gatePlaces;
 	}
-
+	
+	public class Square {
+		
+		public ControlNode topLeft, topRight, bottomRight, bottomLeft;
+		public Node centreTop, centreRight, centreBottom, centreLeft;
+		public int configuration;
+		
+		public Square (ControlNode _topLeft,
+		               ControlNode _topRight,
+		               ControlNode _bottomRight,
+		               ControlNode _bottomLeft) {
+			topLeft = _topLeft;
+			topRight = _topRight;
+			bottomRight = _bottomRight;
+			bottomLeft = _bottomLeft;
+			
+			centreTop = topLeft.right;
+			centreRight = bottomRight.above;
+			centreBottom = bottomLeft.right;
+			centreLeft = bottomLeft.above;
+			
+			if (topLeft.active)
+				configuration += 8;
+			if (topRight.active)
+				configuration += 4;
+			if (bottomRight.active)
+				configuration += 2;
+			if (bottomLeft.active)
+				configuration += 1;
+		}
+		
+	}
+	
+	public class Node {
+		public Vector3 position;
+		public int vertexIndex = -1;
+		
+		public Node(Vector3 _pos) {
+			position = _pos;
+		}
+	}
+	
+	public class ControlNode : Node {
+		
+		public bool active;
+		public Node above, right;
+		
+		public ControlNode(Vector3 _pos, bool _active, float yspace, float xspace) : base(_pos) {
+			active = _active;
+			above = new Node(position + Vector3.forward * yspace / 2.0f);
+			right = new Node(position + Vector3.right * xspace / 2.0f);
+		}
+		
+	}
+	//////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////////////////////
+	
 
 
 	/// <summary>
@@ -328,41 +331,21 @@ public class MapGenerator : MonoBehaviour {
 	void GeneratePaths () {
 
 	}
-
-	/// <summary>
-	/// Places the cursed grave
-	/// in an available place.
-	/// </summary>
-	void PlaceCursedGrave () {
-		List<Coord> possiblePlaces = GetRegionTiles (GateSquare.topLeft.x, GateSquare.topLeft.y);
-		int regionSize = possiblePlaces.Count;
-		float chance = 0.1f;
-		float increment = (1.0f - chance) / (regionSize * 0.4f);
-		int idx = regionSize - 1;
-
-		while (chance <= 1.0f) {
-			if (Random.value <= chance) {
-				Coord place = possiblePlaces[idx];
-				Vector3 pos = new Vector3(place.x * xSpacing, 0, place.y * ySpacing);
-				Instantiate(CursedGrave, pos, Quaternion.identity);
-				break;
-			}
-			idx--;
-			chance += increment;
-		}
-	}
-
+	
 	/// <summary>
 	/// Generates tombstones in any open bitmap spot.
 	/// </summary>
 	void GenerateTombstones() {
+		Vector3 graveOrigin = new Vector3 (-xSpacing * xNumGraves / 2.0f + xSpacing / 2.0f,
+		                                   0.0f,
+		                                   -ySpacing * yNumGraves / 2.0f + 2.0f * ySpacing / 2.0f);
 		for (int x = 0; x < xNumGraves; x++) {
 			for (int y = 0; y < yNumGraves; y++) {
 				// only place graves in places not out of bounds or used by paths
 				if (grid[x,y] == 0) {
-					Vector3 loc = new Vector3(xSpacing * x - xSpacing * xNumGraves/2 - leeway/2 + Random.value * leeway * xSpacing,
-					                          0,
-					                          ySpacing * y - ySpacing * yNumGraves/2 - leeway/2 + Random.value * leeway * ySpacing);
+					Vector3 loc = new Vector3(xSpacing * x + graveOrigin.x - leeway/2.0f + Random.value * leeway * xSpacing,
+					                          0.0f,
+					                          ySpacing * y + graveOrigin.z - leeway/2.0f + Random.value * leeway * ySpacing);
 					GameObject grave = null;
 					switch (Random.Range (0, 11)) {
 					case 0:
@@ -511,6 +494,131 @@ public class MapGenerator : MonoBehaviour {
 			tombstone.transform.eulerAngles = new Vector3(270.0f, 330.0f, 0.0f);
 			break;
 		}
+		}
+	}
+
+	/// <summary>
+	/// Places fences based on configuration of squaregrid.
+	/// </summary>
+	void CreateWalls () {
+		Vector3 fenceOrigin = new Vector3 (-xSpacing * xNumGraves / 2.0f + 1.0f * xSpacing,
+		                                   0.0f,
+		                                   -ySpacing * yNumGraves / 2.0f + 1.0f * ySpacing);
+		if (squareGrid != null) {
+			for (int x = 0; x < xNumGraves - 1; x++) {
+				for (int y = 0; y < yNumGraves - 1; y++) {
+					Vector3 pos = fenceOrigin + new Vector3 (x *xSpacing, 0.0f, y * ySpacing);
+					GameObject newfence;
+					switch (squareGrid.squares[x,y].configuration) {
+					case 1: {
+						goto case 14;
+					}
+					case 2: {
+						goto case 13;
+					}
+					case 3: {
+						goto case 12;
+					}
+					case 4: {
+						goto case 11;
+					}
+					case 5: { // 2 diag topright & botleft
+//						pos += new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
+//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
+//						newfence.transform.eulerAngles = new Vector3(0.0f, 00.0f, 0.0f);
+//						pos -= new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
+//						
+//						pos += new Vector3 (-0.3f * xSpacing, 0.0f, 0.55f * ySpacing);
+//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
+//						newfence.transform.eulerAngles = new Vector3(0.0f, 90.0f, 0.0f);
+						break;
+					}
+					case 6: {
+						goto case 9;
+					}
+					case 7: {
+						goto case 8;
+					}
+					case 8: { // top left diag
+						pos += new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
+						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
+						newfence.transform.eulerAngles = new Vector3(0.0f, 00.0f, 0.0f);
+						pos -= new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
+						
+						pos += new Vector3 (-0.3f * xSpacing, 0.0f, 0.55f * ySpacing);
+						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
+						newfence.transform.eulerAngles = new Vector3(0.0f, 90.0f, 0.0f);
+						break;
+					}
+					case 9: { // vertical
+						pos += new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
+						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
+						newfence.transform.eulerAngles = new Vector3(0.0f, 00.0f, 0.0f);
+						pos -= new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
+
+//						pos += new Vector3 (-0.3f * xSpacing, 0.0f, 0.55f * ySpacing);
+//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
+//						newfence.transform.eulerAngles = new Vector3(0.0f, 90.0f, 0.0f);
+						break;
+					}
+					case 10: { // 2 diag topleft & botright
+//						pos += new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
+//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
+//						newfence.transform.eulerAngles = new Vector3(0.0f, 00.0f, 0.0f);
+//						pos -= new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
+//						
+//						pos += new Vector3 (-0.3f * xSpacing, 0.0f, 0.55f * ySpacing);
+//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
+//						newfence.transform.eulerAngles = new Vector3(0.0f, 90.0f, 0.0f);
+						break;
+					}
+					case 11: { // top right diag
+//						pos += new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
+//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
+//						newfence.transform.eulerAngles = new Vector3(0.0f, 00.0f, 0.0f);
+//						pos -= new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
+//						
+//						pos += new Vector3 (-0.3f * xSpacing, 0.0f, 0.55f * ySpacing);
+//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
+//						newfence.transform.eulerAngles = new Vector3(0.0f, 90.0f, 0.0f);
+						break;
+					}
+					case 12: { // horizontal
+//						pos += new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
+//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
+//						newfence.transform.eulerAngles = new Vector3(0.0f, 00.0f, 0.0f);
+//						pos -= new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
+						
+						pos += new Vector3 (-0.3f * xSpacing, 0.0f, 0.55f * ySpacing);
+						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
+						newfence.transform.eulerAngles = new Vector3(0.0f, 90.0f, 0.0f);
+						break;
+					}
+					case 13: { // bot right diag
+//						pos += new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
+//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
+//						newfence.transform.eulerAngles = new Vector3(0.0f, 00.0f, 0.0f);
+//						pos -= new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
+//						
+//						pos += new Vector3 (-0.3f * xSpacing, 0.0f, 0.55f * ySpacing);
+//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
+//						newfence.transform.eulerAngles = new Vector3(0.0f, 90.0f, 0.0f);
+						break;
+					}
+					case 14: { // bot left diag
+//						pos += new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
+//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
+//						newfence.transform.eulerAngles = new Vector3(0.0f, 00.0f, 0.0f);
+//						pos -= new Vector3 (0.0f, 0.0f, +0.25f * ySpacing);
+//						
+//						pos += new Vector3 (-0.3f * xSpacing, 0.0f, 0.55f * ySpacing);
+//						newfence = (GameObject)(Instantiate (fence, pos, Quaternion.identity));
+//						newfence.transform.eulerAngles = new Vector3(0.0f, 90.0f, 0.0f);
+						break;
+					}
+					}
+				}
+			}
 		}
 	}
 
