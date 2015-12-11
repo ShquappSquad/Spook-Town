@@ -21,15 +21,43 @@ public class PlayerMovement : MonoBehaviour {
 			east_west = 0.0f;
 		}
 
+
 		if (east_west != 0.0f || north_south != 0.0f) {
 			UpdateDirection ();
 			RotatePlayer ();
-			Vector3 movement = new Vector3 (east_west, 0.0f, north_south);
-			if (direction % 2 == 1) {
-				transform.position += movement * speed * 0.707f;
-			} else {
-				transform.position += movement * speed;
+			RaycastHit left = new RaycastHit();
+			RaycastHit middle = new RaycastHit();
+			RaycastHit right = new RaycastHit();
+			Vector3 origin = transform.position;
+			origin.y = 2.0f;
+			if (east_west < 0) {
+				east_west = -east_west;
 			}
+			if (north_south < 0) {
+				north_south = -north_south;
+			}
+			float moveMag = speed * (east_west + north_south) / 2.0f;
+			Ray leftRay = new Ray(origin + transform.right * -1.0f, transform.forward);
+			Ray middleRay = new Ray(origin + transform.forward * 1.0f, transform.forward);
+			Ray rightRay = new Ray(origin + transform.right * 1.0f, transform.forward);
+
+			if (Physics.Raycast (leftRay, out left, moveMag)) {
+				if (left.collider.tag == "Obstacle") {
+					moveMag = left.distance;
+				}
+			}
+			if (Physics.Raycast (middleRay, out middle, moveMag)) {
+				if (middle.collider.tag == "Obstacle") {
+					moveMag = middle.distance;
+				}
+			}
+			if (Physics.Raycast (rightRay, out right, moveMag)) {
+				if (right.collider.tag == "Obstacle") {
+					moveMag = right.distance;
+				}
+			}
+
+			transform.position += transform.forward * moveMag;
 		}
 	}
 
