@@ -29,7 +29,7 @@ public class PlayerMovement : MonoBehaviour {
 			RaycastHit middle = new RaycastHit();
 			RaycastHit right = new RaycastHit();
 			Vector3 origin = transform.position;
-			origin.y = 2.0f;
+			origin.y = 1.0f;
 			if (east_west < 0) {
 				east_west = -east_west;
 			}
