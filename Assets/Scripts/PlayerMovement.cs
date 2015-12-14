@@ -6,58 +6,44 @@ public class PlayerMovement : MonoBehaviour {
 	public float speed = 0.4f;
 	public float east_west;
 	public float north_south;
+	private Rigidbody rb;
 
 	public int direction = 0;
 	// 0: north	1: northeast
 	// 2: east	3: southeast
 	// 4: south	5: southwest
 	// 6: west	7: northwest
-	
+
+	void Start() {
+		rb = GetComponent<Rigidbody> ();
+	}
+
 	// Update is called once per frame
-	void Update () {
-		east_west = Input.GetAxis ("Horizontal");
-		north_south = Input.GetAxis ("Vertical");
-		if (east_west < 0.3f && east_west > -0.3f) {
-			east_west = 0.0f;
-		}
-
-
-		if (east_west != 0.0f || north_south != 0.0f) {
-			UpdateDirection ();
-			RotatePlayer ();
-			RaycastHit left = new RaycastHit();
-			RaycastHit middle = new RaycastHit();
-			RaycastHit right = new RaycastHit();
-			Vector3 origin = transform.position;
-			origin.y = 1.0f;
-			if (east_west < 0) {
-				east_west = -east_west;
+	void FixedUpdate () {
+		if (rb == null) {
+			return;
+		} else {
+			east_west = Input.GetAxis ("Horizontal");
+			north_south = Input.GetAxis ("Vertical");
+			if (east_west < 0.3f && east_west > -0.3f) {
+				east_west = 0.0f;
 			}
-			if (north_south < 0) {
-				north_south = -north_south;
-			}
-			float moveMag = speed * (east_west + north_south) / 2.0f;
-			Ray leftRay = new Ray(origin + transform.right * -1.0f, transform.forward);
-			Ray middleRay = new Ray(origin + transform.forward * 1.0f, transform.forward);
-			Ray rightRay = new Ray(origin + transform.right * 1.0f, transform.forward);
 
-			if (Physics.Raycast (leftRay, out left, moveMag)) {
-				if (left.collider.tag == "Obstacle") {
-					moveMag = left.distance;
+
+			if (east_west != 0.0f || north_south != 0.0f) {
+				UpdateDirection ();
+				RotatePlayer ();
+				Vector3 origin = transform.position;
+				if (east_west < 0) {
+					east_west = -east_west;
 				}
-			}
-			if (Physics.Raycast (middleRay, out middle, moveMag)) {
-				if (middle.collider.tag == "Obstacle") {
-					moveMag = middle.distance;
+				if (north_south < 0) {
+					north_south = -north_south;
 				}
-			}
-			if (Physics.Raycast (rightRay, out right, moveMag)) {
-				if (right.collider.tag == "Obstacle") {
-					moveMag = right.distance;
-				}
-			}
+				float moveMag = speed * (east_west + north_south) / 2.0f;
 
-			transform.position += transform.forward * moveMag;
+				rb.MovePosition (origin + transform.forward * moveMag);
+			}
 		}
 	}
 

@@ -2,8 +2,8 @@
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
   <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\PlayerMovement.cs">
     <Files>
-      <File FileName="Assets\Scripts\MapGenerator.cs" Line="661" Column="66" />
-      <File FileName="Assets\Scripts\PlayerMovement.cs" Line="32" Column="16" />
+      <File FileName="Assets\Scripts\PlayerMovement.cs" Line="36" Column="41" />
+      <File FileName="Assets\Scripts\MapGenerator.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\CameraController.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\LampProximityLighter.cs" Line="1" Column="1" />
     </Files>
