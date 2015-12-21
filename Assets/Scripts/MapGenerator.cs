@@ -25,6 +25,7 @@ public class MapGenerator : MonoBehaviour {
 	public GameObject shortFence;
 	public GameObject gate;
 	public GameObject CursedGrave;
+	public GameObject path;
 
 	// grid random fill percent
 	[Range(0.0f, 1.0f)]
@@ -43,8 +44,8 @@ public class MapGenerator : MonoBehaviour {
 	/// Called at beginning of program, creates map.
 	/// </summary>
 	void Start () {
-		if (grave1 == null || grave2 == null || grave3 == null ||
-		    tree == null || lamp == null || fence == null || gate == null) {
+		if (grave1 == null || grave2 == null || grave3 == null || tree == null || CursedGrave == null ||
+		    lamp == null || fence == null || gate == null || path == null) {
 			return; // nothing to do here
 		}
 		if (shortFence == null) { // default shortFence to fence
@@ -60,6 +61,8 @@ public class MapGenerator : MonoBehaviour {
 		}
 		CreateWalls ();
 		PlacePlayer ();
+		PlaceCursedGrave ();
+//		GeneratePaths ();
 		GenerateTombstones ();
 
 	}
@@ -335,11 +338,198 @@ public class MapGenerator : MonoBehaviour {
 
 
 	/// <summary>
+	/// Places the cursed grave.
+	/// </summary>
+	void PlaceCursedGrave () {
+		int x = 0, y = 0; // find gate square because I'm too lazy to actually put that data somewhere in here
+		bool placed = false;
+
+		for (x = 0; x < xNumGraves - 2; x++) {
+			for (y = 0; y < yNumGraves - 2; y++) {
+				if (squareGrid.gateSquare == squareGrid.squares[x, y]) {
+					break;
+				}
+			}
+			if (squareGrid.gateSquare == squareGrid.squares[x, y]) {
+				break;
+			}
+		}
+
+		List<Coord> region = GetRegionTiles (x, y + 1);
+		float placementProbability = 0.2f;
+		float increment = (1.0f - placementProbability) / (0.4f * region.Count);
+		// placed in the furthest 40% somewhere
+		while (!placed) {
+			if (Random.value < placementProbability) {
+				Coord loc = region[region.Count - 1];
+				grid[loc.x, loc.y] = -1; // mark as cursed tomb
+				placed = true;
+			} else {
+				region.RemoveAt(region.Count - 1);
+				placementProbability += increment;
+			}
+		}
+	}
+
+	// used when generating paths
+	struct Path {
+		public int x, y;
+		public int maxLength;
+		public int distSoFar;
+		public int direction;
+		public Path(int xin, int yin, int maxLen, int dir) {
+			x = xin;
+			y = yin;
+			maxLength = maxLen;
+			distSoFar = 0;
+			direction = dir;
+		}
+	}
+
+	/// <summary>
 	/// Generates the paths.
 	/// </summary>
 	void GeneratePaths () {
+		Queue<Path> pathQueue = new Queue<Path>();
+		int x = 0, y = 0; // find gate square because I'm too lazy to actually put that data somewhere in here
+		int avglen = 4;
+
+		for (x = 0; x < xNumGraves - 2; x++) {
+			for (y = 0; y < yNumGraves - 2; y++) {
+				if (squareGrid.gateSquare == squareGrid.squares[x, y]) {
+					break;
+				}
+			}
+			if (squareGrid.gateSquare == squareGrid.squares[x, y]) {
+				break;
+			}
+		}
+
+		pathQueue.Enqueue (new Path (x, y + 1, Random.Range(avglen - 1, avglen + 2), 0));
+		while (pathQueue.Count > 0) {
+			Path popped = pathQueue.Dequeue ();
+			while (CheckNextPathSpace(popped)) {
+				popped.distSoFar++;
+			}
+			ReservePathSquares(popped);
+			MakeKidPaths(popped, pathQueue);
+		}
+	}
+
+	void MakeKidPaths(Path path, Queue<Path> pathQueue) {
 
 	}
+
+	void ReservePathSquares (Path path) {
+		int i;
+		for (i = 0; i < path.distSoFar; i++) {
+			switch (path.direction) {
+			case 0: { // up
+				squareGrid.squares[path.x, path.y + i].configuration = -16; // flag as path
+				break;
+			}
+			case 1: { // up right
+				squareGrid.squares[path.x + i, path.y + i].configuration = -16;
+				break;
+			}
+			case 2: { // right
+				squareGrid.squares[path.x + i, path.y].configuration = -16;
+				break;
+			}
+			case 3: { // down right
+				squareGrid.squares[path.x + i, path.y - i].configuration = -16;
+				break;
+			}
+			case 4: { // down
+				squareGrid.squares[path.x, path.y - i].configuration = -16;
+				break;
+			}
+			case 5: { // down left
+				squareGrid.squares[path.x - i, path.y - i].configuration = -16;
+				break;
+			}
+			case 6: { // left
+				squareGrid.squares[path.x - i, path.y].configuration = -16;
+				break;
+			}
+			case 7: { // up left
+				squareGrid.squares[path.x - i, path.y + i].configuration = -16;
+				break;
+			}
+			}
+		}
+	}
+
+	bool CheckNextPathSpace (Path path) {
+		switch (path.direction) {
+		case 0: { // up
+			if (path.distSoFar < path.maxLength &&
+			    squareGrid.squares[path.x, path.y + path.distSoFar].configuration == 0) {
+				return true;
+			} else {
+				return false;
+			}
+		};
+		case 1: { // up right
+			if (path.distSoFar < path.maxLength &&
+			    squareGrid.squares[path.x + path.distSoFar, path.y + path.distSoFar].configuration == 0) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+		case 2: { // right
+			if (path.distSoFar < path.maxLength &&
+			    squareGrid.squares[path.x + path.distSoFar, path.y].configuration == 0) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+		case 3: { // down right
+			if (path.distSoFar < path.maxLength &&
+			    squareGrid.squares[path.x + path.distSoFar, path.y - path.distSoFar].configuration == 0) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+		case 4: { // down
+			if (path.distSoFar < path.maxLength &&
+			    squareGrid.squares[path.x, path.y - path.distSoFar].configuration == 0) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+		case 5: { // down left
+			if (path.distSoFar < path.maxLength &&
+			    squareGrid.squares[path.x - path.distSoFar, path.y - path.distSoFar].configuration == 0) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+		case 6: { // left
+			if (path.distSoFar < path.maxLength &&
+			    squareGrid.squares[path.x - path.distSoFar, path.y].configuration == 0) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+		case 7: { // up left
+			if (path.distSoFar < path.maxLength &&
+			    squareGrid.squares[path.x - path.distSoFar, path.y + path.distSoFar].configuration == 0) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+		}
+		return false;
+	}
+
 	
 	/// <summary>
 	/// Generates tombstones in any open bitmap spot.
@@ -395,6 +585,16 @@ public class MapGenerator : MonoBehaviour {
 						break;
 					}
 					}
+				} else if (grid[x, y] == -1) {
+					Vector3 loc = new Vector3(xSpacing * x + graveOrigin.x - leeway/2.0f +
+					                          Random.value * leeway * xSpacing,
+					                          0.0f,
+					                          ySpacing * y + graveOrigin.z - leeway/2.0f +
+					                          Random.value * leeway * ySpacing);
+					GameObject grave = (GameObject)(Instantiate (CursedGrave,
+					             								 transform.position + loc + new Vector3(0.0f, 2.7f, 0.0f),
+					             								 Quaternion.identity));
+					RotateTombstone (grave, Random.Range (0, 12));
 				}
 			}
 		}
@@ -647,6 +847,10 @@ public class MapGenerator : MonoBehaviour {
 						pos += new Vector3(-0.25f * xSpacing, 0.0f, -0.25f * ySpacing);
 						newfence = (GameObject)(Instantiate (shortFence, pos, Quaternion.identity));
 						newfence.transform.eulerAngles = new Vector3(0.0f, 270.0f, 0.0f);
+						break;
+					}
+					case -16: { // path
+						Instantiate (path, pos + new Vector3 (0.0f, 0.05f, 0.0f), Quaternion.identity);
 						break;
 					}
 					}
